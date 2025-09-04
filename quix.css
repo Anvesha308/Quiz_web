@@ -1,7 +1,3 @@
-/*
-  This file contains the custom CSS for the quiz app.
-  The Tailwind CSS classes are included via the HTML file.
-*/
 @keyframes float {
   0% { transform: translate(0, 0); }
   100% { transform: translate(var(--dx), var(--dy)); }
