@@ -1,0 +1,27 @@
+/*
+  This file contains the custom CSS for the quiz app.
+  The Tailwind CSS classes are included via the HTML file.
+*/
+@keyframes float {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(var(--dx), var(--dy)); }
+}
+
+.floating-shape {
+  animation: float var(--duration) ease-in-out infinite alternate var(--delay);
+}
+
+.pulsing {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.5;
+  }
+}
