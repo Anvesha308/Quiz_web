@@ -32,20 +32,19 @@
   </style>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gradient-to-br from-blue-300 via-cyan-300 to-green-300">
-  <!-- The main app will be rendered here -->
-  <div id="root"></div>
-
   <!-- React and React DOM libraries -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <!-- Babel for JSX transformation -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-300 via-cyan-300 to-green-300">
+  <!-- The main app will be rendered here -->
+  <div id="root"></div>
 
   <!-- Main component logic moved into this file -->
   <script type="text/babel">
-    const { useState } = React;
+    const { useState, useEffect } = React;
     const { createRoot } = ReactDOM;
 
     // Initial hardcoded questions as a fallback
@@ -101,13 +100,13 @@
       const [delay] = useState(() => Math.random() * 5);
       const [dx] = useState(() => (Math.random() - 0.5) * 400);
       const [dy] = useState(() => (Math.random() - 0.5) * 400);
-    
+
       const [shape] = useState(() => Math.random() > 0.5 ? 'rounded-full' : 'rounded-lg');
       const [color] = useState(() => {
         const colors = ['bg-pink-500', 'bg-purple-500', 'bg-cyan-500', 'bg-teal-500'];
         return colors[Math.floor(Math.random() * colors.length)];
       });
-    
+
       return (
         <div
           className={`absolute floating-shape opacity-40 ${color} ${shape}`}
@@ -135,36 +134,55 @@
       const [userAnswers, setUserAnswers] = useState([]);
       const [selectedOption, setSelectedOption] = useState(null);
       const [showResultDialog, setShowResultDialog] = useState(false);
+      const [timeLeft, setTimeLeft] = useState(30);
+
+      // Timer functionality
+      useEffect(() => {
+        if (quizState !== 'quiz') return;
+
+        const timerId = setInterval(() => {
+          setTimeLeft(prevTime => {
+            if (prevTime <= 1) {
+              handleNextQuestion(true);
+              return 30; // Reset timer for next question
+            }
+            return prevTime - 1;
+          });
+        }, 1000);
+
+        // Cleanup function to clear the interval
+        return () => clearInterval(timerId);
+      }, [currentQuestionIndex, quizState]);
 
       const handleAnswerClick = (option) => {
         setSelectedOption(option);
       };
 
-      const handleNextQuestion = () => {
-        if (selectedOption === null) {
+      const handleNextQuestion = (isSkipped = false) => {
+        if (selectedOption === null && !isSkipped) {
           setShowResultDialog(true);
           return;
         }
 
-        const isCorrect = selectedOption === quizQuestions[currentQuestionIndex].correctAnswer;
-        const newAnswers = [
-          ...userAnswers,
-          {
-            question: quizQuestions[currentQuestionIndex].question,
-            selectedOption: selectedOption,
-            correctAnswer: quizQuestions[currentQuestionIndex].correctAnswer,
-            isCorrect: isCorrect
-          }
-        ];
+        // Add the user's answer to the list
+        const newAnswer = {
+          question: quizQuestions[currentQuestionIndex].question,
+          selectedOption: isSkipped ? 'Skipped' : selectedOption,
+          correctAnswer: quizQuestions[currentQuestionIndex].correctAnswer,
+          isCorrect: isSkipped ? false : selectedOption === quizQuestions[currentQuestionIndex].correctAnswer,
+        };
+        setUserAnswers([...userAnswers, newAnswer]);
 
-        setUserAnswers(newAnswers);
-        if (isCorrect) {
+        // Update the score if the answer was correct
+        if (newAnswer.isCorrect) {
           setScore(score + 1);
         }
 
+        // Move to the next question or end the quiz
         if (currentQuestionIndex + 1 < quizQuestions.length) {
           setCurrentQuestionIndex(currentQuestionIndex + 1);
           setSelectedOption(null);
+          setTimeLeft(30);
         } else {
           setQuizState('results');
         }
@@ -176,6 +194,7 @@
         setScore(0);
         setUserAnswers([]);
         setSelectedOption(null);
+        setTimeLeft(30);
       };
 
       const renderQuiz = () => {
@@ -195,8 +214,11 @@
         return (
           <div className="flex flex-col items-center justify-center p-4 min-h-screen font-sans z-10">
             <div className="bg-transparent text-gray-800 w-full max-w-xl mx-auto">
-              <div className="text-center text-gray-600 mb-4 text-sm font-semibold">
-                Question {progress}
+              <div className="flex justify-between items-center mb-4 text-sm font-semibold">
+                <span className="text-gray-600">Question {progress}</span>
+                <div className={`p-2 rounded-full text-white w-10 h-10 flex items-center justify-center font-bold shadow-lg ${timeLeft <= 10 ? 'bg-red-500 pulsing' : 'bg-blue-500'}`}>
+                  {timeLeft}
+                </div>
               </div>
               <div className="text-xl font-bold text-center mb-6 text-gray-900">
                 {questionData.question}
@@ -216,9 +238,15 @@
                   </button>
                 ))}
               </div>
-              <div className="flex justify-end mt-6">
+              <div className="flex justify-between mt-6">
                 <button
-                  onClick={handleNextQuestion}
+                  onClick={() => handleNextQuestion(true)}
+                  className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-xl transition-all duration-200 shadow-md transform hover:scale-105"
+                >
+                  Skip
+                </button>
+                <button
+                  onClick={() => handleNextQuestion(false)}
                   className="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-xl transition-all duration-200 shadow-md transform hover:scale-105"
                 >
                   {currentQuestionIndex + 1 === quizQuestions.length ? 'Submit' : 'Next'}
@@ -300,3 +328,4 @@
   </script>
 </body>
 </html>
+
