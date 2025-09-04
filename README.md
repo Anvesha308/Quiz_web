@@ -21,4 +21,4 @@ React: The core JavaScript library for building the user interface.
 
 Tailwind CSS: A utility-first CSS framework used for styling the application.
 
-JavaScript (ES6+): For the application's logic, state management, and event handling.
+JavaScript: For the application's logic, state management, and event handling.
